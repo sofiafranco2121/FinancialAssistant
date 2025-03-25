@@ -1,0 +1,346 @@
+{
+  "name": "Financial Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -460,
+        -120
+      ],
+      "id": "49d4ffe1-3c94-438f-ab35-3e78d76f4ab9",
+      "name": "When chat message received",
+      "webhookId": "df05794d-820e-4f67-a1e9-fe867fb2cf98"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=#Rol\n-Eres un asistente capaz de contestar preguntas frecuentes sobre mis finanzas personales. Solo hablas en ingles.\n\n#Tareas\n-Tu función principal es responder a este mensaje {{ $json.chatInput }}.\n-Utiliza información de la herramienta seeBudget en caso de que se requiera de esa información. El presupuesto de cada categoría es el dinero que hay disponible para gastar ese mes.\n-Utiliza información de la herramienta seeExpenses en caso de que se requiera de esa información. La fecha de los gastos está en formato DD/MM/YYYY.\n-Cuando el usuario te añada un archivo adjunto de un recibo o una factura extraerás los siguientes parámetros: nombreGasto, total, fecha, categoriaGasto. Luego los insertarás en la tabla de gastos a través de la herramienta.\ninsertExpenses. La categoriaGasto solo puede ser Salud, Restaurantes, Transporte, Comida o Deporte. Si el gasto esta en una moneda destinta a dolares, tienes que pasarlo a dolares. Ten en cuenta que 1.958,16 pesos argentinos son aproximadamente 1,83 dólares estadounidenses.\n\n#Notas\n-Tus respuestas deben ser claras y concisas, no debes exceder los 200 caracteres.\n-Puedes hacer cálculos para poder obtener resultados totales de ingresos y gastos.\n-Responde siempre refiriéndote al dinero como dólares.\n-El presupuesto de cada categoría es el dinero que hay disponible para gastar ese mes. La diferencia entre lo presupuestado y los gastos del mes es el dinero que todavía hay disponible en esa categoría.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -240,
+        -120
+      ],
+      "id": "b4508160-2ecd-4b33-8e11-7c3bbaa54d74",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -540,
+        140
+      ],
+      "id": "f6dbc471-6322-48ae-967b-4a9c30ba06cd",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "eAwXja4jqAqvtgVB",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -380,
+        140
+      ],
+      "id": "4e331b80-a7ce-4a2c-a470-dabd9ec9fe6b",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "xSkJaFnCJCfbQErT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Llama a esta herramienta para insertar nuevos datos de gastos",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appJNqM4KVwjn5uE5",
+          "mode": "list",
+          "cachedResultName": "Asistente de Finanzas",
+          "cachedResultUrl": "https://airtable.com/appJNqM4KVwjn5uE5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblXGvXtqKjiER6rL",
+          "mode": "list",
+          "cachedResultName": "ListaContable",
+          "cachedResultUrl": "https://airtable.com/appJNqM4KVwjn5uE5/tblXGvXtqKjiER6rL"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre": "={{ $fromAI(\"nombreGasto\",\"nombre del gasto del usuario\") }}",
+            "Cantidad": "={{ $fromAI(\"total\",\"total de lo que gasto el usuario en dolares\", \"number\") }}",
+            "Fecha": "={{ $fromAI('fecha', `fecha en formato DD/MM/YYYY del gasto del usuario`, 'string') }}",
+            "Categoria": "={{ $fromAI(\"categoriaGasto\", \"categoria del gasto del usuario\") }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cantidad",
+              "displayName": "Cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Categoria",
+              "displayName": "Categoria",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Restaurantes",
+                  "value": "Restaurantes"
+                },
+                {
+                  "name": "Salud",
+                  "value": "Salud"
+                },
+                {
+                  "name": "Deporte",
+                  "value": "Deporte"
+                },
+                {
+                  "name": "Transporte",
+                  "value": "Transporte"
+                },
+                {
+                  "name": "Comida",
+                  "value": "Comida"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        120
+      ],
+      "id": "770b3a2b-6e0d-444e-8ee3-8ff1d09c99cc",
+      "name": "insertExpenses",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "bVvKltmf5dlaskZU",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Llama a esta herramienta para ver los gastos del usuario. Para poder filtrar por meses del año debes usar la columna Fecha que tiene datos con este formato DD/MM/YYYY",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appJNqM4KVwjn5uE5",
+          "mode": "list",
+          "cachedResultName": "Asistente de Finanzas",
+          "cachedResultUrl": "https://airtable.com/appJNqM4KVwjn5uE5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblXGvXtqKjiER6rL",
+          "mode": "list",
+          "cachedResultName": "ListaContable",
+          "cachedResultUrl": "https://airtable.com/appJNqM4KVwjn5uE5/tblXGvXtqKjiER6rL"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        740,
+        120
+      ],
+      "id": "763c2b22-3168-416e-b73f-5b402fc7d7dd",
+      "name": "seeExpenses",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "bVvKltmf5dlaskZU",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Llama a esta herramienta para encontrar información del presupuesto de cada categoría ",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appJNqM4KVwjn5uE5",
+          "mode": "list",
+          "cachedResultName": "Asistente de Finanzas",
+          "cachedResultUrl": "https://airtable.com/appJNqM4KVwjn5uE5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblaWrCRIHK22g5yC",
+          "mode": "list",
+          "cachedResultName": "Presupuesto",
+          "cachedResultUrl": "https://airtable.com/appJNqM4KVwjn5uE5/tblaWrCRIHK22g5yC"
+        },
+        "filterByFormula": "={MesCalendario} = \"{{ $fromAI(\"mes\",\"mes del anio en espanol y primera letra en mayuscula.\") }}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        600,
+        120
+      ],
+      "id": "1cbc10e5-1050-4ede-b199-4c1f7fd9f8b8",
+      "name": "seeBudget",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "bVvKltmf5dlaskZU",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insertExpenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seeExpenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seeBudget": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f19ac9e4-155a-4a3b-b619-77b47076fe46",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6687a81ecdc130ec7eb8629f5d42efaf590d115c31cb564d92401a3c14f5f523"
+  },
+  "id": "w4W7yro8Kdg2DElN",
+  "tags": []
+}
